@@ -1,4 +1,4 @@
-#Device reporter for Android
+## #Device reporter for Android
 
 ## Description
 The Device reporter is a module which examines hardware and software features of an Android device.
@@ -11,7 +11,7 @@ This device reporter was developed using Eclipse. This Eclipse project includes 
 This project has been developed by Technosite R&D department.
 Device reporter is shared under New BSD license. This project folder includes a license file.
 You can share and distribute this project and built software using New BSD license.
-Please, send any feedback to http://www.cloud4all.info
+Please, send any feedback to info@cloud4all.info
 
 ## How to use the service
 Device reporter is an Android service. You have to develop an activity or service which will connect to Device porter service using binding service connection.
