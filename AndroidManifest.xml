@@ -33,22 +33,23 @@
         <activity
             android:name="com.cloud4all.devicereporter.Viewer"
             android:label="@string/app_name" >
+            
+            <receiver android:name="com.cloud4all.devicereporter.DeviceReporterReceiver" >
             <intent-filter>
+                <action android:name="cloudDeviceReporter" />
+            </intent-filter>
+        </receiver>
+        
+            <intent-filter>
+            <!--
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+                -->
             </intent-filter>
         </activity>
-        <!--
-           <service
-  android:name="com.cloud4all.devicereporter.DeviceReporterService"
-  android:process=":device_reporter_process" 
-    android:label="DeviceReporter">
-</service> 
-            -->
+  
             <service android:name="DeviceReporterService"
              android:label="DeviceReporter">
-            >
            </service>              
     </application>
 

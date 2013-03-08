@@ -41,6 +41,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Log;
 
 public class DeviceReporterService extends Service{
 	
@@ -50,8 +51,31 @@ public class DeviceReporterService extends Service{
 	private DeviceReporterEngine deviceReporterEngine;
 
 	@Override
+	public void onCreate() {
+		super.onCreate();
+	}
+	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();	
+	}
+	
+	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		return Service.START_NOT_STICKY;
+		try {
+			CloudIntent cloudinfo = CloudIntent.intentToCloudIntent(intent);
+			int event = cloudinfo.getIdEvent();
+			switch (event) {
+			case CommunicationPersistence.EVENT_GET_FEATURES :
+				managePetition(cloudinfo ); 
+				break;
+				default :
+					break;
+			}
+					} catch (Exception e) {
+			Log.e("DeviceReporterService error in onStartCommand", "Error managing the intent.\n"+e);
+		}
+		return super.onStartCommand(intent, flags, startId);
 	}
 
 	@Override
@@ -59,6 +83,11 @@ public class DeviceReporterService extends Service{
 		return mBinder;
 	}
 
+	@Override
+	public boolean onUnbind(Intent intent) {
+		return super.onUnbind(intent);
+	}
+	
 	public class MyBinder extends Binder {
 		DeviceReporterService getService() {
 			return DeviceReporterService.this;
@@ -66,7 +95,43 @@ public class DeviceReporterService extends Service{
 	}
 
 	// ** Methods for results
+
+	private void managePetition(CloudIntent intent) {
+		String[] args;
+		try {
+			args = intent.getArrayIds();
+			for (int i = 0; i < args.length; i++){
+				String paramName = args[i];
+				if (paramName.equalsIgnoreCase("ReporterType") ) {
+					String paramValue = intent.getValue(args[i]);
+					if (paramValue.equalsIgnoreCase("ROOT") ) {
+						saveResultsToJSONFile(getResults());
+						sendResults();			
+					}
+				}
+			}
+					} catch (Exception e) {
+			Log.e("DeviceReporterService error in ManagePettition", "Error in Intent management.\n" +e);
+		}
+		
+		
+		
+	}
 	
+	private String resultFilePath = null;
+	
+	private void sendResults() {
+		try {
+			CloudIntent intent = new CloudIntent(CommunicationPersistence.ACTION_ORCHESTRATOR,CommunicationPersistence.EVENT_GET_FEATURES_RESPONSE,CommunicationPersistence.MODULE_DEVICE_REPORTER);
+			intent.setParams("ReporterType", "ROOT");
+			intent.setParams("ReporterPath", resultFilePath );
+			Context ct = getApplicationContext();
+			ct.sendBroadcast(intent);
+		} catch (Exception e) {
+			Log.e("DeviceReporterBroadcastManager error in sendResults", "Error sending broadcast.\n" +e);
+		}
+		}
+
 	// method for getting data from the Device reporter
 	public Map<String, String> getResults() {
 		deviceReporterEngine = new DeviceReporterEngine(getApplicationContext());
@@ -79,4 +144,10 @@ public class DeviceReporterService extends Service{
 		return deviceReporterEngine.getResults();
 	}
 
+	
+	// Method for saving Device reporter data in a JSON file
+	private void saveResultsToJSONFile(Map<String, String> data) {
+
+		resultFilePath = "/dev/null";
+	}
 }
