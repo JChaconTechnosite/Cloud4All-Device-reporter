@@ -111,7 +111,8 @@ public class Viewer extends Activity  {
 
 	// Shows data from Device reporter
 	public void showDeviceReporterResults() {
-		showMapResults((Map<String,String>) sDeviceReporter.getResults()); 
+		showMapResults((Map<String,String>) sDeviceReporter.getResults());
+		sDeviceReporter.saveResultsToJSONFile((Map<String,String>) sDeviceReporter.getResults());
 	}
 
 	// ** Service connection

@@ -16,6 +16,7 @@ Please, send any feedback to info@cloud4all.info
 ## How to use the service
 Device reporter is an Android service. You have to develop an activity or service which will connect to Device porter service using binding service connection.
 You can read sample code in Viewer.java file to do this.
+Device reporter supports broadcast communication for Android. Device reporter includes a broadcast receiver to accept petitions from other applications.
 The device reporter need some system permissions to access to information of the device.
 You can check all permissions in AndroidManifest.xml file in the project.
 
@@ -26,18 +27,21 @@ You can get device data using a custom context or the current context. You can u
 - public HashMap getResultsWithContext(Context context);
 - Public HashMap getResults();
 
+### Input by broadcast receiver
+Device reporter uses a broadcast receiver to get petitions from other applications.
+The broadcast notification name uses this string: "cloudDeviceReporter".
+You can check the constants for persistence in CommunicationPersistence.java file.
+If you use broadcast communication, Device reporter supports two ways:
+- All data in Device reporter: Send a broadcast notification with this key-value: ReporterType, ROOT.
+- A specific value in Device reporter: send a broadcast with this key-value: ReporterValue, NAME_OF_THE_PARAMETER_IN_DEVICE_REPORTER_LIST
+
 ### Output
 Device reporter uses a collection(HashMap<String,String>) for replying the connection.
 There is no duplicate key using a HashMap. Keys and values are stored as strings. You have to convert values to numbers if you will manage that data.
 
-## Modules
-There are three java files in the project. Here is a list of files with all classes. 
-- DeviceReporterService.java
-Here is the service class for Device reporter. it manages the connection with the reporting engine.
-- DeviceReporterEngine.java
-This class examine the hardware and the software of the device and fill the collection for the reply of the service.
-- Viewer.java
-this class is a sample code to link to the Device reporter service. Thiss class makes a connection with the Device reporter service and it shows the result collection with the data of the device.
+For broadcast communications Device reporter offers two types of results:
+- All data in Device reporter: Device reporter answers a string value with the path where the JSON result file is saved.
+- A specific value in Device reporter: Device reporter answers a broadcast with the key-value that you need. If the key was not in the hasmap data the value will be "ERROR".
 
 ## Elements in the results
 The device reporter examine these groups of information:
@@ -71,6 +75,10 @@ Here are the static results:
 0.8 - Tests about Device reporter's performance running as an application, service, IntentService and a broadCast.
 0.9 - Device reporter developed as a service.
 1.0 - Stable version of Device reporter. Viewer class added as a demo
+1.1 - Broadcast support added.
+1.2 - JSON file for results saved in external memory.
+1.3 - Ask for a specific value function added.
+2.0 - Stable version of Device reporter with broadcast support.
 
 ## Bugs and decisions
 There is a list of found bugs and topics about Device reporter development:
@@ -103,3 +111,10 @@ A solution for this problem is add a new method to get the information about the
 A piece of the results of Device reporter is static data. This static data can be stored in a file to spend less time in the Device reporter task.
 This file with static data would be created when the system starts. The main module of Cloud4ALL enviroment should run this first loading process for Device reporter.
 These solutions will be included in next versions of the Device reporter
+
+### Broadcast communication
+Device reporter includes a broadcast receiver and a broadcast sender module to add external communication with other Cloud4All 302.2 task modules.
+All constants for identifications and notifications are in CommunicationPersistence.java file. This file has to be shared and updated with all modules.
+
+### Ask for a specific value
+Device reporter can answer a specific value of its results. This feature is available only for broadcast communication. This feature will be added as a common function for other communication methods with Device reporter.

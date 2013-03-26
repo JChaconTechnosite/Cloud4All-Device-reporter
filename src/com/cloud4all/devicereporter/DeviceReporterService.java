@@ -1,4 +1,4 @@
-package com.cloud4all.devicereporter;
+	package com.cloud4all.devicereporter;
 /*
 
 DeviceReporterService
@@ -34,12 +34,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
  */
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -106,25 +115,26 @@ public class DeviceReporterService extends Service{
 					String paramValue = intent.getValue(args[i]);
 					if (paramValue.equalsIgnoreCase("ROOT") ) {
 						saveResultsToJSONFile(getResults());
-						sendResults();			
+						sendResults("ReporterPath", resultFilePath, "ROOT");
 					}
+				} else if (paramName.equalsIgnoreCase("ReporterValue") ) { 
+					String paramValue = intent.getValue(args[i]);
+					String resultValue = getValueFromMapForKey(getResults(),paramValue);
+					sendResults(paramValue, resultValue , "VALUE");
 				}
 			}
 					} catch (Exception e) {
 			Log.e("DeviceReporterService error in ManagePettition", "Error in Intent management.\n" +e);
 		}
-		
-		
-		
 	}
 	
 	private String resultFilePath = null;
 	
-	private void sendResults() {
+	private void sendResults(String keyParam, String valueParam, String reporterTypeParam) {
 		try {
 			CloudIntent intent = new CloudIntent(CommunicationPersistence.ACTION_ORCHESTRATOR,CommunicationPersistence.EVENT_GET_FEATURES_RESPONSE,CommunicationPersistence.MODULE_DEVICE_REPORTER);
-			intent.setParams("ReporterType", "ROOT");
-			intent.setParams("ReporterPath", resultFilePath );
+						intent.setParams("ReporterType", reporterTypeParam);
+						intent.setParams(keyParam, valueParam);
 			Context ct = getApplicationContext();
 			ct.sendBroadcast(intent);
 		} catch (Exception e) {
@@ -144,10 +154,50 @@ public class DeviceReporterService extends Service{
 		return deviceReporterEngine.getResults();
 	}
 
-	
-	// Method for saving Device reporter data in a JSON file
-	private void saveResultsToJSONFile(Map<String, String> data) {
-
-		resultFilePath = "/dev/null";
+	// Method for getting a specific value from Device reporter
+	private String getValueFromMapForKey(Map<String, String> data, String keyParam) {
+		String result = "ERROR";
+		Map<String,String> mapData = new TreeMap<String, String>(data);
+		Iterator<Map.Entry<String,String>> it = mapData.entrySet().iterator();
+		while (it.hasNext()) {
+	Map.Entry<String, String> e = (Map.Entry<String, String>) it.next();
+	if (keyParam.equalsIgnoreCase(e.getKey()) ) {
+		result = e.getValue();
+		break;
+		}
 	}
+		return result;
+	}
+	
+		// Method for saving Device reporter data in a JSON file
+	public void saveResultsToJSONFile(Map<String, String> data) {
+		// Create JSON file
+		JSONObject JSONFile = new JSONObject();
+		Map<String,String> mapData = new TreeMap<String, String>(data);
+				Iterator<Map.Entry<String,String>> it = mapData.entrySet().iterator();
+				try {
+		while (it.hasNext()) {
+			Map.Entry<String, String> e = (Map.Entry<String, String>) it.next();
+						JSONFile.put(e.getKey(), e.getValue()); 
+					}
+				} catch (JSONException JSONe) {
+			Log.e("DeviceReporterService Error in saveResultsToJSONFile", "Error creating JSON object.\n"+JSONe);
+		}
+				// Write the file in internal memory
+		String fileName = "C4ADevReporter.json";
+				try{     
+			File ruta_sd = Environment.getExternalStorageDirectory();
+			File f = new File(ruta_sd.getAbsolutePath(), fileName); 
+								OutputStreamWriter fout = new OutputStreamWriter(new FileOutputStream(f));
+					
+			fout.write(JSONFile .toString());
+			fout.flush();
+			fout.close();
+									resultFilePath = "/" + fileName;
+			} catch (Exception ex) {     
+				Log.e("DeviceReporterService Error in saveResultsToJSONFile", "Error writing file in internal memory.\n"+ex);
+				resultFilePath = "/dev/null";
+				}	
+				}
+	
 }
