@@ -107,6 +107,7 @@ public class DeviceReporterService extends Service{
 
 	private void managePetition(CloudIntent intent) {
 		String[] args;
+		int idAction = intent.getIdAction(); 
 		try {
 			args = intent.getArrayIds();
 			for (int i = 0; i < args.length; i++){
@@ -114,13 +115,15 @@ public class DeviceReporterService extends Service{
 				if (paramName.equalsIgnoreCase("ReporterType") ) {
 					String paramValue = intent.getValue(args[i]);
 					if (paramValue.equalsIgnoreCase("ROOT") ) {
-						saveResultsToJSONFile(getResults());
-						sendResults("ReporterPath", resultFilePath, "ROOT");
+						// Changes for Vodafone's demo
+						// saveResultsToJSONFile(getResults());
+						String JSONStringResult = convertResultsToJSONString(getResults());
+						sendResults("device_reporter", JSONStringResult , "ROOT", idAction );
 					}
 				} else if (paramName.equalsIgnoreCase("ReporterValue") ) { 
 					String paramValue = intent.getValue(args[i]);
 					String resultValue = getValueFromMapForKey(getResults(),paramValue);
-					sendResults(paramValue, resultValue , "VALUE");
+					sendResults(paramValue, resultValue , "VALUE", idAction );
 				}
 			}
 					} catch (Exception e) {
@@ -130,9 +133,9 @@ public class DeviceReporterService extends Service{
 	
 	private String resultFilePath = null;
 	
-	private void sendResults(String keyParam, String valueParam, String reporterTypeParam) {
+	private void sendResults(String keyParam, String valueParam, String reporterTypeParam, int idActionParam) {
 		try {
-			CloudIntent intent = new CloudIntent(CommunicationPersistence.ACTION_ORCHESTRATOR,CommunicationPersistence.EVENT_GET_FEATURES_RESPONSE,CommunicationPersistence.MODULE_DEVICE_REPORTER);
+			CloudIntent intent = new CloudIntent(CommunicationPersistence.ACTION_ORCHESTRATOR,CommunicationPersistence.EVENT_GET_FEATURES_RESPONSE,idActionParam);
 						intent.setParams("ReporterType", reporterTypeParam);
 						intent.setParams(keyParam, valueParam);
 			Context ct = getApplicationContext();
@@ -183,6 +186,7 @@ public class DeviceReporterService extends Service{
 				} catch (JSONException JSONe) {
 			Log.e("DeviceReporterService Error in saveResultsToJSONFile", "Error creating JSON object.\n"+JSONe);
 		}
+				
 				// Write the file in internal memory
 		String fileName = "C4ADevReporter.json";
 				try{     
@@ -200,4 +204,21 @@ public class DeviceReporterService extends Service{
 				}	
 				}
 	
+	// Method for saving Device reporter data in a JSON string
+		public String convertResultsToJSONString(Map<String, String> data) {
+						// Create JSON file
+			JSONObject JSONFile = new JSONObject();
+			Map<String,String> mapData = new TreeMap<String, String>(data);
+					Iterator<Map.Entry<String,String>> it = mapData.entrySet().iterator();
+					try {
+			while (it.hasNext()) {
+				Map.Entry<String, String> e = (Map.Entry<String, String>) it.next();
+							JSONFile.put(e.getKey(), e.getValue()); 
+						}
+			return JSONFile.toString();
+					} catch (JSONException JSONe) {
+				Log.e("DeviceReporterService Error in saveResultsToJSONFile", "Error creating JSON object.\n"+JSONe);
+				return null;
+			}
+		}
 }

@@ -34,7 +34,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
  */
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -105,6 +111,11 @@ public class DeviceReporterEngine {
 		results.put("Brand" , android.os.Build.BRAND);
 		results.put("CPU" , android.os.Build.CPU_ABI);
 		results.put("CPU2" , android.os.Build.CPU_ABI2);
+		if (isDeviceRooted()) {
+			results.put("rootAccess", "yes");
+		} else {
+			results.put("rootAccess", "no");
+		}
 	}
 
 	private void getDataAboutOperatingSystem(Context ct) {
@@ -566,5 +577,114 @@ public class DeviceReporterEngine {
 				TOUCHSCREEN_NOTOUCH)));
 	}
 
+	
+	// CheckForRoot management
+	
+	private static String LOG_TAG = DeviceReporterEngine.class.getName();
+
+	public static enum SHELL_CMD {
+		check_su_binary(new String[] { "su", "-c", "ls /" }), ;
+
+		String[] command;
+
+		SHELL_CMD(String[] command) {
+			this.command = command;
+		}
+	}
+
+	/*
+	 * Three method to check the root permissions
+	 */
+	public boolean isDeviceRooted() {
+		if (checkRootMethod1()) {
+			Log.d(LOG_TAG, "method 1: true");
+			return true;
+		}
+		if (checkRootMethod2()) {
+			Log.d(LOG_TAG, "method 2: true");
+			return true;
+		}
+		if (checkRootMethod3()) {
+			Log.d(LOG_TAG, "method 3: true");
+			return true;
+		}
+		return false;
+	}
+
+	/*
+	 * Method 1, check the SO builds Tags, Usually don't response with the
+	 * correct answer
+	 */
+	public boolean checkRootMethod1() {
+		String buildTags = android.os.Build.TAGS;
+
+		if (buildTags != null && buildTags.contains("test-keys")) {
+			return true;
+		}
+		return false;
+	}
+
+	/*
+	 * Method 2, If exists Superuser.apk, you can access as SuperUser. Usually,
+	 * if the device is root, this method return true.
+	 */
+	public boolean checkRootMethod2() {
+		try {
+			File file = new File("/system/app/Superuser.apk");
+			if (file.exists()) {
+				return true;
+			}
+		} catch (Exception e) {
+		}
+
+		return false;
+	}
+
+	/*
+	 * Method 2, check thought the shell. If you can exec su, the device is
+	 * root.
+	 */
+	public boolean checkRootMethod3() {
+		if (executeCommand(SHELL_CMD.check_su_binary) != null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public ArrayList<String> executeCommand(SHELL_CMD shellCmd) {
+		String line = null;
+		ArrayList<String> fullResponse = new ArrayList<String>();
+		Process localProcess = null;
+
+		try {
+			localProcess = Runtime.getRuntime().exec(shellCmd.command);
+		} catch (Exception e) {
+
+			e.printStackTrace();
+			return null;
+		}
+
+		BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+				localProcess.getOutputStream()));
+		BufferedReader in = new BufferedReader(new InputStreamReader(
+				localProcess.getInputStream()));
+
+		try {
+			while ((line = in.readLine()) != null) {
+				Log.d(LOG_TAG, "--> Line received: " + line);
+				fullResponse.add(line);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		Log.d(LOG_TAG, "--> Full response was: " + fullResponse);
+
+		return fullResponse;
+	}
+
+	
+	
 
 }
