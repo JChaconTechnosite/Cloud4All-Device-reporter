@@ -1,4 +1,4 @@
-## #Device reporter for Android
+# Device reporter for Android
 
 ## Description
 The Device reporter is a module which examines hardware and software features of an Android device.
@@ -118,3 +118,10 @@ All constants for identifications and notifications are in CommunicationPersiste
 
 ### Ask for a specific value
 Device reporter can answer a specific value of its results. This feature is available only for broadcast communication. This feature will be added as a common function for other communication methods with Device reporter.
+
+
+## Funding Acknowledgement
+
+The research leading to these results has received funding from the European
+Union's Seventh Framework Programme (FP7/2007-2013) under grant agreement No.289016
+([Cloud4all](http://www.cloud4all.info/)).
